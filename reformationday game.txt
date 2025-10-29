@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reformation Day Jeopardy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia','Times New Roman',serif;
+      background: linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);
+      color: white; padding: 20px; min-height: 100vh;
+    }
+    .header {
+      text-align: center; margin-bottom: 20px; position: sticky; top: 0;
+      background: linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);
+      padding: 20px 0; z-index: 100; border-bottom: 3px solid #ffd700;
+    }
+    h1 {
+      font-size: 2.8em; text-shadow: 3px 3px 6px rgba(0,0,0,.5);
+      margin-bottom: 5px; letter-spacing: 2px;
+    }
+    .subtitle { font-size: 1.2em; color: #ffd700; font-style: italic; }
+    .legend { display:flex; justify-content:center; gap:30px; margin:15px 0; font-size:1em; }
+    .legend-item { display:flex; align-items:center; gap:10px; }
+    .legend-box { width:25px; height:25px; border:2px solid white; border-radius:4px; }
+    .legend-box.kid { background: linear-gradient(135deg,#4facfe 0%,#00f2fe 100%); }
+    .legend-box.adult { background: linear-gradient(135deg,#f093fb 0%,#f5576c 100%); }
+
+    .scoreboard {
+      display:flex; justify-content:center; gap:30px; margin:15px 0; flex-wrap:wrap;
+    }
+    .team { background: rgba(255,255,255,.1); padding:12px 25px; border-radius:8px; border:2px solid rgba(255,255,255,.3); }
+    .team-name { font-size:1.1em; margin-bottom:5px; }
+    .team-score { font-size:1.8em; font-weight:bold; color:#ffd700; }
+    .score-note { font-size:.85em; opacity:.85; margin-top:6px; }
+
+    .game-container { max-width:1400px; margin:20px auto; padding-bottom:20px; }
+    .game-board { display:grid; grid-template-columns: repeat(6,1fr); gap:12px; }
+    .category-column { display:flex; flex-direction:column; gap:10px; }
+    .category {
+      background:#000; padding:18px 12px; text-align:center; font-size:1.05em;
+      font-weight:bold; border:3px solid #ffd700; border-radius:8px; min-height:80px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .question-square {
+      height:90px; border:3px solid rgba(255,255,255,.3); border-radius:8px;
+      display:flex; align-items:center; justify-content:center; font-size:2em; font-weight:bold;
+      cursor:pointer; transition: all .3s ease; color:#ffd700; text-shadow:2px 2px 4px rgba(0,0,0,.5);
+    }
+    .question-square.kid { background: linear-gradient(135deg,#4facfe 0%,#00f2fe 100%); }
+    .question-square.adult { background: linear-gradient(135deg,#f093fb 0%,#f5576c 100%); }
+    .question-square:hover:not(.answered) { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,215,0,.5); }
+    .question-square.answered {
+      background:#333 !important; color:#666; cursor:not-allowed; opacity:.5;
+    }
+
+    .modal {
+      display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,.9); z-index:1000; align-items:center; justify-content:center;
+    }
+    .modal.show { display:flex; }
+    .modal-content {
+      background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      padding:40px; border-radius:15px; max-width:800px; width:90%; max-height:90vh; overflow-y:auto;
+      text-align:center; border:4px solid #ffd700; animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { transform: translateY(-50px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+    .modal-value { font-size:3em; color:#ffd700; margin-bottom:20px; text-shadow:3px 3px 6px rgba(0,0,0,.5); }
+    .modal-question { font-size:1.8em; margin-bottom:20px; line-height:1.4; }
+    .modal-answer { font-size:1.4em; color:#4CAF50; margin-top:15px; padding:16px; background: rgba(0,0,0,.3); border-radius:10px; display:none; }
+    .modal-answer.show { display:block; }
+
+    .modal-buttons { margin-top:20px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .modal-btn {
+      padding:12px 22px; font-size:1.05em; border:none; border-radius:8px; cursor:pointer; font-weight:bold; transition: all .3s ease;
+    }
+    .modal-btn.reveal { background:#ffd700; color:#000; }
+    .modal-btn.close { background:#f44336; color:white; }
+    .modal-btn:hover { transform: scale(1.05); }
+
+    /* Team award buttons inside modal */
+    .award-row { margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .award-btn {
+      padding:10px 16px; border:2px solid rgba(255,255,255,.6); background:transparent; color:white;
+      border-radius:8px; cursor:pointer; font-weight:bold;
+    }
+    .award-btn.active { background:#4CAF50; border-color:#4CAF50; }
+    .award-help { font-size:.9em; opacity:.9; margin-top:6px; }
+
+    .control-buttons { position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:10px; }
+    .control-btn { padding:15px 30px; border:none; border-radius:8px; font-size:1.1em; font-weight:bold; cursor:pointer; transition: all .3s ease; color:white; }
+    .reset-btn { background:#ff9800; }
+    .reset-btn:hover { transform: scale(1.05); background:#f57c00; }
+
+    .progress { text-align:center; margin:15px 0; font-size:1.2em; color:#ffd700; }
+
+    @media (max-width:1200px){ .game-board{ grid-template-columns: repeat(3,1fr); } }
+    @media (max-width:768px){
+      .game-board{ grid-template-columns: repeat(2,1fr); }
+      h1{ font-size:2em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>REFORMATION DAY JEOPARDY</h1>
+    <!-- Subtitle with date removed -->
+    <p class="subtitle">A Movement That Changed the World</p>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-box kid"></div><span>Kid-Friendly (Ages 5–12)</span></div>
+      <div class="legend-item"><div class="legend-box adult"></div><span>Teen/Adult Questions</span></div>
+    </div>
+
+    <div class="scoreboard">
+      <div class="team">
+        <div class="team-name">Team 1</div>
+        <div class="team-score" id="team1-score">0</div>
+        <div class="score-note">Scoring: 1 point per correct answer</div>
+      </div>
+      <div class="team">
+        <div class="team-name">Team 2</div>
+        <div class="team-score" id="team2-score">0</div>
+        <div class="score-note">Scoring: 1 point per correct answer</div>
+      </div>
+      <div class="team">
+        <div class="team-name">Team 3</div>
+        <div class="team-score" id="team3-score">0</div>
+        <div class="score-note">Scoring: 1 point per correct answer</div>
+      </div>
+    </div>
+
+    <div class="progress" id="progress">Questions Remaining: 0</div>
+  </div>
+
+  <div class="game-container">
+    <div class="game-board" id="game-board"></div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-value" id="modal-value"></div>
+      <div class="modal-question" id="modal-question"></div>
+
+      <div class="award-row">
+        <button class="award-btn" data-team="1" onclick="toggleAward(1)">Team 1 +1</button>
+        <button class="award-btn" data-team="2" onclick="toggleAward(2)">Team 2 +1</button>
+        <button class="award-btn" data-team="3" onclick="toggleAward(3)">Team 3 +1</button>
+      </div>
+      <div class="award-help">Click a team to award 1 point for this question. Click again to undo, or choose a different team to move the point.</div>
+
+      <div class="modal-answer" id="modal-answer"></div>
+
+      <div class="modal-buttons">
+        <button class="modal-btn reveal" id="reveal-btn" onclick="revealAnswer()">Show Answer</button>
+        <button class="modal-btn close" onclick="closeModal()">Close &amp; Mark Answered</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-buttons">
+    <button class="control-btn reset-btn" onclick="resetGame()">Reset Game</button>
+  </div>
+
+  <script>
+    const gameData = {
+      "Martin Luther": [
+        {"value":100,"question":"2. What year did Martin Luther post his 95 Theses?","answer":"1517","level":"Kids","color":"kid"},
+        {"value":100,"question":"12. Who was the Pope when Luther posted his 95 Theses?","answer":"Pope Leo X","level":"Kids","color":"kid"},
+        {"value":100,"question":"25. Where was Martin Luther from?","answer":"Germany","level":"Kids","color":"kid"},
+        {"value":200,"question":"4. What city did Martin Luther live in when he posted his 95 Theses?","answer":"Wittenberg","level":"Kids","color":"kid"},
+        {"value":200,"question":"21. How many theses did Luther post on the church door?","answer":"95","level":"Kids","color":"kid"},
+        {"value":200,"question":"34. Fill in the blank: Luther said we are saved by _____ alone.","answer":"Faith (or grace)","level":"Kids","color":"kid"},
+        {"value":300,"question":"5. Where did Luther nail his 95 Theses?","answer":"On the church door (Castle Church door)","level":"Kids","color":"kid"},
+        {"value":300,"question":"24. Who was the Holy Roman Emperor who called Luther a \"cesspool of heresies\"?","answer":"Charles V","level":"Kids","color":"kid"},
+        {"value":400,"question":"37. At what event did Luther make his famous stand in 1521?","answer":"The Diet of Worms","level":"Teens/Adults","color":"adult"},
+        {"value":500,"question":"41. What did Luther say repentance should be, according to his first thesis?","answer":"The whole life of believers / Not just a single moment","level":"Teens/Adults","color":"adult"},
+        {"value":600,"question":"43. What year was Luther excommunicated?","answer":"1521 (January 3)","level":"Teens/Adults","color":"adult"},
+        {"value":700,"question":"45. What book did Luther write exposing the church's failures?","answer":"On the Babylonian Captivity of the Church","level":"Teens/Adults","color":"adult"},
+        {"value":800,"question":"55. How did nuns escape from a convent with Luther's help?","answer":"Hidden in empty fish barrels","level":"Teens/Adults","color":"adult"},
+        {"value":900,"question":"68. What was Luther's famous quote at the Diet of Worms?","answer":"\"Here I stand, I can do no other\" (or similar wording)","level":"Teens/Adults","color":"adult"}
+      ],
+      "The Five Solas": [
+        {"value":400,"question":"39. Name at least 3 of the 5 solas.","answer":"Sola Scriptura, Sola Fide, Sola Gratia, Solus Christus, Soli Deo Gloria","level":"Teens/Adults","color":"adult"},
+        {"value":500,"question":"61. What does \"sola fide\" mean in English?","answer":"Faith alone","level":"Teens/Adults","color":"adult"},
+        {"value":600,"question":"62. What does \"sola gratia\" mean?","answer":"Grace alone","level":"Teens/Adults","color":"adult"},
+        {"value":700,"question":"64. What does \"soli Deo gloria\" mean?","answer":"To God alone be the glory","level":"Teens/Adults","color":"adult"},
+        {"value":800,"question":"70. What does \"sola Scriptura\" mean in English?","answer":"Scripture alone","level":"Teens/Adults","color":"adult"}
+      ],
+      "Other Reformers": [
+        {"value":100,"question":"17. What country did John Calvin minister in?","answer":"Switzerland (or Geneva)","level":"Kids","color":"kid"},
+        {"value":200,"question":"18. What country did John Knox bring the Reformation to?","answer":"Scotland","level":"Kids","color":"kid"},
+        {"value":400,"question":"50. What year did Calvin complete the first edition of the Institutes?","answer":"1536","level":"Teens/Adults","color":"adult"}
+      ],
+      "Bible Translation": [
+        {"value":100,"question":"6. What language did Luther translate the Bible into so regular people could read it?","answer":"German","level":"Kids","color":"kid"},
+        {"value":200,"question":"8. What was the name of the castle where Luther was hidden and translated the Bible?","answer":"Wartburg Castle","level":"Kids","color":"kid"},
+        {"value":400,"question":"46. In what year did Luther escape to Wartburg Castle?","answer":"1521 (May 4)","level":"Teens/Adults","color":"adult"}
+      ],
+      "True or False": [
+        {"value":100,"question":"3. True or False: Martin Luther was a monk.","answer":"True","level":"Kids","color":"kid"},
+        {"value":100,"question":"22. True or False: The Reformation only happened in one country.","answer":"False","level":"Kids","color":"kid"},
+        {"value":100,"question":"32. True or False: Luther believed faith in Jesus was enough for salvation.","answer":"True","level":"Kids","color":"kid"},
+        {"value":200,"question":"11. True or False: November 1 is called All Saints' Day.","answer":"True","level":"Kids","color":"kid"},
+        {"value":200,"question":"26. True or False: Luther thought people could buy their way into heaven.","answer":"False (He disagreed with this idea","level":"Kids","color":"kid"},
+        {"value":300,"question":"14. True or False: The 95 Theses were written in English.","answer":"False (They were written in Latin)","level":"Kids","color":"kid"},
+        {"value":300,"question":"29. True or False: Martin Luther was kidnapped by his friends.","answer":"True (to protect him)","level":"Kids","color":"kid"},
+        {"value":400,"question":"40. True or False: The Catholic Church at the time believed in justification by faith.","answer":"True (but not by faith ALONE)","level":"Teens/Adults","color":"adult"},
+        {"value":500,"question":"47. True or False: The Reformers rejected all church tradition.","answer":"False (They respected it but didn't see it as equal to Scripture)","level":"Teens/Adults","color":"adult"},
+        {"value":600,"question":"53. True or False: According to Luther, our identity in the gospel is something we achieve.","answer":"False (It's a gift we receive)","level":"Teens/Adults","color":"adult"},
+        {"value":700,"question":"58. True or False: Calvin was forced to leave Geneva in 1538.","answer":"True","level":"Teens/Adults","color":"adult"},
+        {"value":800,"question":"65. True or False: Erasmus agreed completely with Luther's views.","answer":"False (He attacked Luther in 1524)","level":"Teens/Adults","color":"adult"},
+        {"value":900,"question":"69. True or False: Luther's wife Katharina von Bora was a former nun.","answer":"True","level":"Teens/Adults","color":"adult"}
+      ],
+      "Reformation History": [
+        {"value":100,"question":"1. What date is Reformation Day?","answer":"October 31","level":"Kids","color":"kid"},
+        {"value":100,"question":"23. What does \"Reformation\" mean?","answer":"To change or improve something / To reform the church","level":"Kids","color":"kid"},
+        {"value":200,"question":"10. What were people buying to try to reduce their time in purgatory?","answer":"Indulgences","level":"Kids","color":"kid"},
+        {"value":200,"question":"33. What do we call October 31 in the Protestant church?","answer":"Reformation Day","level":"Kids","color":"kid"},
+        {"value":300,"question":"15. What is the main book that Protestants believe is the authority for faith?","answer":"The Bible","level":"Kids","color":"kid"},
+        {"value":300,"question":"2a. What year did the Reformation take place?","answer":"1517","level":"Kids","color":"kid"},
+        {"value":400,"question":"35. What was the formal cause of the Reformation?","answer":"Sola Scriptura (the authority of Scripture alone)","level":"Teens/Adults","color":"adult"},
+        {"value":500,"question":"36. What was the material cause of the Reformation?","answer":"Justification by faith alone (sola fide)","level":"Teens/Adults","color":"adult"},
+        {"value":600,"question":"49. Who led the Reformation in Switzerland?","answer":"Ulrich Zwingli (and later John Calvin)","level":"Teens/Adults","color":"adult"},
+        {"value":700,"question":"52. What is a mortal sin according to Catholic teaching?","answer":"A sin that \"kills\" the grace in the soul / A serious sin that removes justification","level":"Teens/Adults","color":"adult"},
+        {"value":800,"question":"63. What does \"solus Christus\" mean?","answer":"Christ alone","level":"Teens/Adults","color":"adult"},
+        {"value":900,"question":"67. What queen was called \"Bloody Mary\"?","answer":"Mary I of England","level":"Teens/Adults","color":"adult"}
+      ]
+    };
+
+    // --- Game state ---
+    let teamScores = [0, 0, 0];
+    let questionsAnswered = 0;
+    let totalQuestions = 0;
+
+    // state for current open question
+    let currentSquare = null;
+    let awardedTeam = null; // 1,2,3 or null
+
+    // --- Init board ---
+    function initializeBoard() {
+      const board = document.getElementById('game-board');
+      board.innerHTML = '';
+      totalQuestions = 0;
+      questionsAnswered = 0;
+
+      Object.keys(gameData).forEach(category => {
+        const columnDiv = document.createElement('div');
+        columnDiv.className = 'category-column';
+
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'category';
+        categoryDiv.textContent = category;
+        columnDiv.appendChild(categoryDiv);
+
+        gameData[category].forEach((q, index) => {
+          const questionDiv = document.createElement('div');
+          questionDiv.className = `question-square ${q.color}`;
+          questionDiv.textContent = `$${q.value}`;
+          questionDiv.onclick = () => showQuestion(category, index, questionDiv);
+          columnDiv.appendChild(questionDiv);
+          totalQuestions++;
+        });
+
+        board.appendChild(columnDiv);
+      });
+
+      updateProgress();
+    }
+
+    function showQuestion(category, index, square) {
+      if (square.classList.contains('answered')) return;
+
+      const q = gameData[category][index];
+      currentSquare = square;
+      awardedTeam = null; // reset selection for this question
+      setAwardButtonsActive(null);
+
+      document.getElementById('modal-value').textContent = `$${q.value}`;
+      document.getElementById('modal-question').textContent = q.question;
+      const ans = document.getElementById('modal-answer');
+      ans.textContent = q.answer;
+      ans.classList.remove('show');
+      document.getElementById('reveal-btn').style.display = 'inline-block';
+      document.getElementById('modal').classList.add('show');
+    }
+
+    function setAwardButtonsActive(teamNum) {
+      document.querySelectorAll('.award-btn').forEach(btn => {
+        const t = Number(btn.getAttribute('data-team'));
+        btn.classList.toggle('active', teamNum === t);
+      });
+    }
+
+    // Toggle +1 point for the selected team for THIS question (move/undo supported)
+    function toggleAward(teamNum) {
+      // undo same team
+      if (awardedTeam === teamNum) {
+        // remove 1 from that team
+        teamScores[teamNum - 1] = Math.max(0, teamScores[teamNum - 1] - 1);
+        updateTeamScoreDisplay(teamNum);
+        awardedTeam = null;
+        setAwardButtonsActive(null);
+        return;
+      }
+
+      // move point from prior team if needed
+      if (awardedTeam !== null) {
+        teamScores[awardedTeam - 1] = Math.max(0, teamScores[awardedTeam - 1] - 1);
+        updateTeamScoreDisplay(awardedTeam);
+      }
+
+      // give point to new team
+      teamScores[teamNum - 1] += 1;
+      updateTeamScoreDisplay(teamNum);
+      awardedTeam = teamNum;
+      setAwardButtonsActive(teamNum);
+    }
+
+    function updateTeamScoreDisplay(teamNum) {
+      document.getElementById(`team${teamNum}-score`).textContent = teamScores[teamNum - 1];
+    }
+
+    function revealAnswer() {
+      document.getElementById('modal-answer').classList.add('show');
+      document.getElementById('reveal-btn').style.display = 'none';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('show');
+      if (currentSquare) {
+        currentSquare.classList.add('answered');
+        questionsAnswered++;
+        updateProgress();
+      }
+      // clear selection visuals for next time
+      setAwardButtonsActive(null);
+      currentSquare = null;
+      awardedTeam = null;
+    }
+
+    function updateProgress() {
+      const remaining = totalQuestions - questionsAnswered;
+      document.getElementById('progress').textContent = `Questions Remaining: ${remaining} / ${totalQuestions}`;
+    }
+
+    function resetGame() {
+      if (confirm('Reset game? All scores and progress will be lost.')) {
+        teamScores = [0, 0, 0];
+        document.getElementById('team1-score').textContent = '0';
+        document.getElementById('team2-score').textContent = '0';
+        document.getElementById('team3-score').textContent = '0';
+        initializeBoard();
+        currentSquare = null;
+        awardedTeam = null;
+      }
+    }
+
+    // Start
+    initializeBoard();
+  </script>
+</body>
+</html>
